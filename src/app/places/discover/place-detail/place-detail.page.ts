@@ -1,22 +1,34 @@
-import { Component, OnInit } from '@angular/core';
-import { Router } from '@angular/router';
-import { NavController } from '@ionic/angular';
+import { Component, OnInit } from "@angular/core";
+import { ActivatedRoute } from "@angular/router";
+import { NavController } from "@ionic/angular";
+import { PlacesService } from "../../places.service";
+import { Place } from "../../place.model";
 
 @Component({
-  selector: 'app-place-detail',
-  templateUrl: './place-detail.page.html',
-  styleUrls: ['./place-detail.page.scss'],
+  selector: "app-place-detail",
+  templateUrl: "./place-detail.page.html",
+  styleUrls: ["./place-detail.page.scss"],
 })
 export class PlaceDetailPage implements OnInit {
-
-  constructor(private router:Router, private  navCtrl:NavController) { }
+  place: Place;
+  constructor(
+    private route: ActivatedRoute,
+    private navCtrl: NavController,
+    private placesService: PlacesService
+  ) {}
 
   ngOnInit() {
+    this.route.paramMap.subscribe((paramMap) => {
+      if (!paramMap.has("placeId")) {
+        this.navCtrl.navigateBack("/places/tabs/discover");
+        return;
+      }
+      this.place = this.placesService.getPlace(paramMap.get("placeId"));
+    });
   }
 
-  onBookPlace(){
+  onBookPlace() {
     //  this.router.navigateByUrl('/places/tabs/discover');
-     this.navCtrl.navigateBack('/places/tabs/discover');
+    this.navCtrl.navigateBack("/places/tabs/discover");
   }
-
 }
