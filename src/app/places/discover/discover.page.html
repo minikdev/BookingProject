@@ -19,7 +19,11 @@
               >{{loadedPlaces[0].price | currency}} / Night</ion-card-subtitle
             >
             <ion-img [src]="loadedPlaces[0].imageUrl"></ion-img>
-            <ion-card-content>{{loadedPlaces[0].description}}</ion-card-content>
+            <ion-card-content class="ion-text-center">
+              <ion-text  >
+                {{loadedPlaces[0].description}}
+              </ion-text>
+            </ion-card-content>
           </ion-card-header>
           <div class="ion-text-center">
             <ion-button

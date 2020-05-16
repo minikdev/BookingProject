@@ -44,7 +44,7 @@ export class PlaceDetailPage implements OnInit {
       .then((resultData) => {
         console.log(resultData.data, resultData.role);
         if (resultData.role==='confirm') {
-          console.log("BOOKED!");
+          console.log("BOOKED!")
         }
       });
   }
