@@ -10,7 +10,7 @@ import { MenuController } from "@ionic/angular";
 })
 export class DiscoverPage implements OnInit {
   loadedPlaces: Place[];
-
+  listedLoadedPlaces: Place[];
   constructor(
     private placesService: PlacesService,
     private menuCtrl: MenuController
@@ -18,6 +18,10 @@ export class DiscoverPage implements OnInit {
 
   ngOnInit() {
     this.loadedPlaces = this.placesService.places;
+    this.listedLoadedPlaces = this.loadedPlaces.slice(1);
   }
- 
+
+  onFilterUpdate(event: CustomEvent) {
+    console.log(event.detail);
+  }
 }
