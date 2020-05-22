@@ -1,17 +1,18 @@
 import { Component, OnInit, OnDestroy } from "@angular/core";
-import { ActivatedRoute } from "@angular/router";
+import { ActivatedRoute, Router } from "@angular/router";
 import {
   NavController,
   ModalController,
   ActionSheetController,
   LoadingController,
+  AlertController,
 } from "@ionic/angular";
 import { PlacesService } from "../../places.service";
 import { Place } from "../../place.model";
 import { CreateBookingComponent } from "src/app/bookings/create-booking/create-booking.component";
 import { Subscription } from "rxjs";
 import { BookingService } from "src/app/bookings/booking.service";
-import { AuthService } from 'src/app/auth/auth.service';
+import { AuthService } from "src/app/auth/auth.service";
 
 @Component({
   selector: "app-place-detail",
@@ -22,6 +23,7 @@ export class PlaceDetailPage implements OnInit, OnDestroy {
   place: Place;
   isBookable = false;
   placeSub: Subscription;
+  isLoading = false;
   constructor(
     private route: ActivatedRoute,
     private navCtrl: NavController,
@@ -29,8 +31,10 @@ export class PlaceDetailPage implements OnInit, OnDestroy {
     private modalCtrl: ModalController,
     private actionSheetCtrl: ActionSheetController,
     private bookingService: BookingService,
-    private loadingCtrl:LoadingController,
-    private authService:AuthService
+    private loadingCtrl: LoadingController,
+    private authService: AuthService,
+    private alertCtrl: AlertController,
+    private router: Router
   ) {}
 
   ngOnInit() {
@@ -39,12 +43,34 @@ export class PlaceDetailPage implements OnInit, OnDestroy {
         this.navCtrl.navigateBack("/places/tabs/discover");
         return;
       }
+      this.isLoading = true;
       this.placeSub = this.placesService
         .getPlace(paramMap.get("placeId"))
-        .subscribe((place) => {
-          this.place = place;
-          this.isBookable=place.userId!==this.authService.userId;
-        });
+        .subscribe(
+          (place) => {
+            this.place = place;
+            this.isBookable = place.userId !== this.authService.userId;
+            this.isLoading = false;
+          },
+          (error) => {
+            this.alertCtrl
+              .create({
+                header: "An error occured!",
+                message: "Could not load place.",
+                buttons: [
+                  {
+                    text: "Okay",
+                    handler: () => {
+                      this.router.navigate(["/places/tabs/discover"]);
+                    },
+                  },
+                ],
+              })
+              .then((alertEl) => {
+                alertEl.present();
+              });
+          }
+        );
     });
   }
 
@@ -90,22 +116,26 @@ export class PlaceDetailPage implements OnInit, OnDestroy {
       })
       .then((resultData) => {
         if (resultData.role === "confirm") {
-          this.loadingCtrl.create({message: 'Booking place...'}).then(loadingEl=>{
-            loadingEl.present(); 
-            const data = resultData.data.bookingData;
-            this.bookingService.addBooking(
-              this.place.id,
-              this.place.title,
-              this.place.imageUrl,
-              data.firstName,
-              data.lastName,
-              data.guestNumber,
-              data.startDate,
-              data.endDate
-            ).subscribe(()=>{
-              loadingEl.dismiss();
+          this.loadingCtrl
+            .create({ message: "Booking place..." })
+            .then((loadingEl) => {
+              loadingEl.present();
+              const data = resultData.data.bookingData;
+              this.bookingService
+                .addBooking(
+                  this.place.id,
+                  this.place.title,
+                  this.place.imageUrl,
+                  data.firstName,
+                  data.lastName,
+                  data.guestNumber,
+                  data.startDate,
+                  data.endDate
+                )
+                .subscribe(() => {
+                  loadingEl.dismiss();
+                });
             });
-          })
         }
       });
   }
