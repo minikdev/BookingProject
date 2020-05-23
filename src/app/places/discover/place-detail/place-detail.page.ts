@@ -10,9 +10,10 @@ import {
 import { PlacesService } from "../../places.service";
 import { Place } from "../../place.model";
 import { CreateBookingComponent } from "src/app/bookings/create-booking/create-booking.component";
-import { Subscription } from "rxjs";
+import { Subscription, VirtualTimeScheduler } from "rxjs";
 import { BookingService } from "src/app/bookings/booking.service";
 import { AuthService } from "src/app/auth/auth.service";
+import { MapModalComponent } from "src/app/shared/map-modal/map-modal.component";
 
 @Component({
   selector: "app-place-detail",
@@ -143,5 +144,20 @@ export class PlaceDetailPage implements OnInit, OnDestroy {
     if (this.placeSub) {
       this.placeSub.unsubscribe();
     }
+  }
+  onShowFullMap() {
+    this.modalCtrl
+      .create({
+        component: MapModalComponent,
+        componentProps:{
+          center:{lat:this.place.location.lat, lng:this.place.location.lng},
+          selectable:false,
+           closeButtonText:'Close',
+            title:this.place.location.address
+        }
+      })
+      .then((modalEl) => {
+        modalEl.present();
+      });
   }
 }
