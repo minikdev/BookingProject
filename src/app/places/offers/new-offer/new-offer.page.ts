@@ -4,6 +4,7 @@ import { PlacesService } from "../../places.service";
 import { Router } from "@angular/router";
 import { LoadingController } from "@ionic/angular";
 import { PlaceLocation } from "../../location.model";
+import { switchMap } from "rxjs/operators";
 
 function base64toBlob(base64Data, contentType) {
   contentType = contentType || "";
@@ -70,19 +71,25 @@ export class NewOfferPage implements OnInit {
       console.log("invalid geldi");
       return;
     }
-    console.log(this.form.value);
     this.loadingCtrl
       .create({ message: "Creating place..." })
       .then((loadingEl) => {
         loadingEl.present();
         this.placesService
-          .addPlace(
-            this.form.value.title,
-            this.form.value.description,
-            +this.form.value.price,
-            new Date(this.form.value.dateFrom),
-            new Date(this.form.value.dateTo),
-            this.form.value.location
+          .uploadImage(this.form.get("image").value)
+          .pipe(
+            switchMap((uploadRes) => {
+              console.log("IN NEW OFFER PAGES",uploadRes.imageUrl);
+              return this.placesService.addPlace(
+                this.form.value.title,
+                this.form.value.description,
+                +this.form.value.price,
+                new Date(this.form.value.dateFrom),
+                new Date(this.form.value.dateTo),
+                this.form.value.location,
+              uploadRes.imageUrl
+              );
+            })
           )
           .subscribe(() => {
             loadingEl.dismiss();
@@ -90,10 +97,15 @@ export class NewOfferPage implements OnInit {
             this.router.navigateByUrl("/places/tabs/offers");
           });
       });
+    
   }
+
+
   onLocationPicked(location: PlaceLocation) {
     this.form.patchValue({ location: location });
   }
+
+
   onImagePicked(imageData: string | File) {
     let imageFile;
     if (typeof imageData === "string") {

@@ -4,7 +4,7 @@ import { AuthService } from "../auth/auth.service";
 import { BehaviorSubject, of } from "rxjs";
 import { take, map, tap, delay, switchMap } from "rxjs/operators";
 import { HttpClient } from "@angular/common/http";
-import { PlaceLocation } from './location.model';
+import { PlaceLocation } from "./location.model";
 
 interface PlaceData {
   availableFrom: string;
@@ -14,7 +14,7 @@ interface PlaceData {
   price: number;
   title: string;
   userId: string;
-  location:PlaceLocation
+  location: PlaceLocation;
 }
 //  Dummy Places Data
 // new Place(
@@ -80,7 +80,6 @@ export class PlacesService {
                   new Date(resData[key].availableTo),
                   resData[key].userId,
                   resData[key].location
-                  
                 )
               );
             }
@@ -115,27 +114,38 @@ export class PlacesService {
       );
   }
 
+  uploadImage(image: File) {
+    const uploadData = new FormData();
+    uploadData.append("image", image);
+
+    return this.http.post<{ imageUrl: string; imagePath: string }>(
+      "https://us-central1-bookingproject-b3ebe.cloudfunctions.net/storeImage",
+      uploadData
+    );
+  }
+
   addPlace(
     title: string,
     description: string,
     price: number,
     dateFrom: Date,
     dateTo: Date,
-    location: PlaceLocation
+    location: PlaceLocation,
+    imageUrl:string
   ) {
     let generatedId: string;
     const newPlace = new Place(
       Math.random().toString(),
       title,
       description,
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e6/Paris_Night.jpg/1024px-Paris_Night.jpg",
+      imageUrl,
       price,
       dateFrom,
       dateTo,
       this.authService.userId,
       location
     );
-
+    console.log("IN ADDPLACE METHOD: ",imageUrl);
     return this.http
       .post<{ name: string }>(
         "https://bookingproject-b3ebe.firebaseio.com/offered-places.json",
@@ -167,13 +177,13 @@ export class PlacesService {
     return this.places.pipe(
       take(1),
       switchMap((places) => {
-        if(!places || places.length<=0){
+        if (!places || places.length <= 0) {
           return this.fetchPlaces();
-        }else{
+        } else {
           return of(places);
         }
-        
-      }),switchMap(places =>{
+      }),
+      switchMap((places) => {
         const updatedPlaceIndex = places.findIndex((pl) => pl.id === placeId);
         updatedPlaces = [...places];
         const oldPlace = updatedPlaces[updatedPlaceIndex];
