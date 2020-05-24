@@ -131,7 +131,7 @@ export class PlacesService {
     dateFrom: Date,
     dateTo: Date,
     location: PlaceLocation,
-    imageUrl:string
+    imageUrl: string
   ) {
     let generatedId: string;
     const newPlace = new Place(
@@ -145,7 +145,7 @@ export class PlacesService {
       this.authService.userId,
       location
     );
-    console.log("IN ADDPLACE METHOD: ",imageUrl);
+    console.log("IN ADDPLACE METHOD: ", imageUrl);
     return this.http
       .post<{ name: string }>(
         "https://bookingproject-b3ebe.firebaseio.com/offered-places.json",
@@ -169,6 +169,22 @@ export class PlacesService {
     //     this._places.next(places.concat(newPlace));
     //   })
     // );
+  }
+
+  deletePlace(placeId: string) {
+    return this.http
+      .delete(
+        `https://bookingproject-b3ebe.firebaseio.com/offered-places/${placeId}.json`
+      )
+      .pipe(
+        switchMap(() => {
+          return this.places;
+        }),
+        take(1),
+        tap((places) => {
+          this._places.next(places.filter((p) => p.id !== placeId));
+        })
+      );
   }
 
   updatePlace(placeId: string, title: string, description: string) {

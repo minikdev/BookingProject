@@ -13,7 +13,7 @@ import { Subscription } from "rxjs";
 export class OffersPage implements OnInit, OnDestroy {
   offers: Place[];
   private placesSub: Subscription;
-  isLoading=false;
+  isLoading = false;
   constructor(private placesService: PlacesService, private router: Router) {}
 
   ngOnInit() {
@@ -26,12 +26,18 @@ export class OffersPage implements OnInit, OnDestroy {
     this.router.navigate(["/", "places", "tabs", "offers", "edit", offerId]);
     console.log("Editing item", offerId);
   }
-  
-  ionViewWillEnter(){
-    this.isLoading=true;
-    this.placesService.fetchPlaces().subscribe(()=>{
-      this.isLoading=false;
+
+  ionViewWillEnter() {
+    this.isLoading = true;
+    this.placesService.fetchPlaces().subscribe(() => {
+      this.isLoading = false;
     });
+  }
+
+  onDelete(offerId: string, slidingItem: IonItemSliding) {
+    slidingItem.close();
+    this.placesService.deletePlace(offerId).subscribe();
+
   }
 
   ngOnDestroy() {
