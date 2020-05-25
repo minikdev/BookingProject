@@ -136,40 +136,40 @@ export class PlacesService {
     let generatedId: string;
 
     let newPlace: Place;
-  return  this.authService.userId.pipe(
-      take(1),
-      switchMap((userID) => {
-        if (!userID) {
-          throw new Error("No user found!");
-        }
+  return this.authService.userId.pipe(
+    take(1),
+    switchMap((userID) => {
+      if (!userID) {
+        throw new Error("No user found!");
+      }
 
-        newPlace = new Place(
-          Math.random().toString(),
-          title,
-          description,
-          imageUrl,
-          price,
-          dateFrom,
-          dateTo,
-          userID,
-          location
-        );
-        console.log("IN ADDPLACE METHOD: ", imageUrl);
-        return this.http.post<{ name: string }>(
-          "https://bookingproject-b3ebe.firebaseio.com/offered-places.json",
-          { ...newPlace, id: null }
-        );
-      }),
-      switchMap((resData) => {
-        generatedId = resData.name;
-        return this.places;
-      }),
-      take(1),
-      tap((places) => {
-        newPlace.id = generatedId;
-        this._places.next(places.concat(newPlace));
-      })
-    );
+      newPlace = new Place(
+        Math.random().toString(),
+        title,
+        description,
+        imageUrl,
+        price,
+        dateFrom,
+        dateTo,
+        userID,
+        location
+      );
+      console.log("IN ADDPLACE METHOD: ", imageUrl);
+      return this.http.post<{ name: string }>(
+        "https://bookingproject-b3ebe.firebaseio.com/offered-places.json",
+        { ...newPlace, id: null }
+      );
+    }),
+    switchMap((resData) => {
+      generatedId = resData.name;
+      return this.places;
+    }),
+    take(1),
+    tap((places) => {
+      newPlace.id = generatedId;
+      this._places.next(places.concat(newPlace));
+    })
+  );
   }
 
   deletePlace(placeId: string) {
