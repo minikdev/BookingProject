@@ -36,36 +36,42 @@ export class BookingService {
     dateTo: Date
   ) {
     let generatedId: string;
-    const newBooking = new Booking(
-      Math.random().toString(),
-      placeId,
-      this.authService.userId,
-      placeTitle,
-      placeImage,
-      firstName,
-      lastName,
-      guestNumber,
-      dateFrom,
-      dateTo
+    let newBooking: Booking;
+    return this.authService.userId.pipe(
+      take(1),
+      switchMap((userId) => {
+        if (!userId) {
+          throw new Error("No user ID found");
+        }
+        newBooking = new Booking(
+          Math.random().toString(),
+          placeId,
+          userId,
+          placeTitle,
+          placeImage,
+          firstName,
+          lastName,
+          guestNumber,
+          dateFrom,
+          dateTo
+        );
+        return this.http.post<{ name: string }>(
+          "https://bookingproject-b3ebe.firebaseio.com/bookings.json",
+          { ...newBooking, id: null }
+        );
+      }),
+      switchMap((resData) => {
+        generatedId = resData.name;
+        return this.bookings;
+      }),
+      take(1),
+      tap((bookings) => {
+        newBooking.id = generatedId;
+        this._bookings.next(bookings.concat(newBooking));
+      })
     );
-    return this.http
-      .post<{ name: string }>(
-        "https://bookingproject-b3ebe.firebaseio.com/bookings.json",
-        { ...newBooking, id: null }
-      )
-      .pipe(
-        switchMap((resData) => {
-          generatedId = resData.name;
-          return this.bookings;
-        }),
-        take(1),
-        tap((bookings) => {
-          newBooking.id = generatedId;
-          this._bookings.next(bookings.concat(newBooking));
-        })
-      );
   }
-// To Do : On Cancel Offer!!
+  // To Do : On Cancel Offer!!
   cancelBooking(bookingId: string) {
     return this.http
       .delete(
@@ -75,7 +81,7 @@ export class BookingService {
         switchMap(() => {
           return this.bookings;
         }),
-        take(1),  
+        take(1),
         tap((bookings) => {
           this._bookings.next(bookings.filter((b) => b.id !== bookingId));
         })
@@ -83,36 +89,40 @@ export class BookingService {
   }
 
   fetchBookings() {
-    return this.http
-      .get<{ [key: string]: BookingData }>(
-        `https://bookingproject-b3ebe.firebaseio.com/bookings.json?orderby="userId"&equalto="${this.authService.userId}"`
-      )
-      .pipe(
-        map((bookingData) => {
-          const bookings = [];
-          for (const key in bookingData) {
-            if (bookingData.hasOwnProperty(key)) {
-              bookings.push(
-                new Booking(
-                  key,
-                  bookingData[key].placeId,
-                  bookingData[key].userId,
-                  bookingData[key].placeTitle,
-                  bookingData[key].placeImage,
-                  bookingData[key].firstName,
-                  bookingData[key].lastName,
-                  bookingData[key].guestNumber,
-                  new Date(bookingData[key].bookedFrom),
-                  new Date(bookingData[key].bookedTo)
-                )
-              );
-            }
+    return this.authService.userId.pipe(
+      switchMap((userId) => {
+        if(!userId){
+          throw new Error('No user id found!');
+        }
+        return this.http.get<{ [key: string]: BookingData }>(
+          `https://bookingproject-b3ebe.firebaseio.com/bookings.json?orderby="userId"&equalto="${userId}"`
+        );
+      }),
+      map((bookingData) => {
+        const bookings = [];
+        for (const key in bookingData) {
+          if (bookingData.hasOwnProperty(key)) {
+            bookings.push(
+              new Booking(
+                key,
+                bookingData[key].placeId,
+                bookingData[key].userId,
+                bookingData[key].placeTitle,
+                bookingData[key].placeImage,
+                bookingData[key].firstName,
+                bookingData[key].lastName,
+                bookingData[key].guestNumber,
+                new Date(bookingData[key].bookedFrom),
+                new Date(bookingData[key].bookedTo)
+              )
+            );
           }
-          return bookings;
-        }),
-        tap((bookings) => {
-          this._bookings.next(bookings);
-        })
-      );
+        }
+        return bookings;
+      }),
+      tap((bookings) => {
+        this._bookings.next(bookings);
+      })
+    );
   }
 }

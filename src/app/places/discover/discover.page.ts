@@ -4,7 +4,7 @@ import { Place } from "../place.model";
 import { MenuController } from "@ionic/angular";
 import { Subscription } from "rxjs";
 import { AuthService } from "src/app/auth/auth.service";
-
+import { take } from "rxjs/operators";
 @Component({
   selector: "app-discover",
   templateUrl: "./discover.page.html",
@@ -15,7 +15,7 @@ export class DiscoverPage implements OnInit, OnDestroy {
   listedLoadedPlaces: Place[];
   relevantPlaces: Place[];
   private placesSub: Subscription;
-  isLoading=false;
+  isLoading = false;
   constructor(
     private placesService: PlacesService,
     private menuCtrl: MenuController,
@@ -27,28 +27,30 @@ export class DiscoverPage implements OnInit, OnDestroy {
       this.loadedPlaces = places;
       this.relevantPlaces = this.loadedPlaces;
       this.listedLoadedPlaces = this.relevantPlaces.slice(1);
-   
     });
   }
 
-  ionViewWillEnter(){
-    this.isLoading=true;
-    this.placesService.fetchPlaces().subscribe(()=>{
-      this.isLoading=false;
+  ionViewWillEnter() {
+    this.isLoading = true;
+    this.placesService.fetchPlaces().subscribe(() => {
+      this.isLoading = false;
     });
   }
 
   onFilterUpdate(event: CustomEvent) {
-    if (event.detail.value === "all") {
-      this.relevantPlaces = this.loadedPlaces;
-      this.listedLoadedPlaces = this.relevantPlaces.slice(1);
-    } else {
-      this.relevantPlaces = this.loadedPlaces.filter(
-        (place) => place.userId !== this.authService.userId
-      );
-      this.listedLoadedPlaces = this.relevantPlaces.slice(1); 
-    }
+    this.authService.userId.pipe(take(1)).subscribe((userID) => {
+      if (event.detail.value === "all") {
+        this.relevantPlaces = this.loadedPlaces;
+        this.listedLoadedPlaces = this.relevantPlaces.slice(1);
+      } else {
+        this.relevantPlaces = this.loadedPlaces.filter(
+          (place) => place.userId !== userID
+        );
+        this.listedLoadedPlaces = this.relevantPlaces.slice(1);
+      }
+    });
   }
+
   ngOnDestroy() {
     if (this.placesSub) {
       this.placesSub.unsubscribe();
