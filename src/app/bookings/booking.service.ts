@@ -37,16 +37,23 @@ export class BookingService {
   ) {
     let generatedId: string;
     let newBooking: Booking;
+    let fetchedUserId: string;
+
     return this.authService.userId.pipe(
       take(1),
       switchMap((userId) => {
         if (!userId) {
           throw new Error("No user ID found");
         }
+        fetchedUserId = userId;
+        return this.authService.token;
+      }),
+      take(1),
+      switchMap((token) => {
         newBooking = new Booking(
           Math.random().toString(),
           placeId,
-          userId,
+          fetchedUserId,
           placeTitle,
           placeImage,
           firstName,
@@ -56,7 +63,7 @@ export class BookingService {
           dateTo
         );
         return this.http.post<{ name: string }>(
-          "https://bookingproject-b3ebe.firebaseio.com/bookings.json",
+          `https://bookingproject-b3ebe.firebaseio.com/bookings.json?auth=${token}`,
           { ...newBooking, id: null }
         );
       }),
@@ -71,31 +78,40 @@ export class BookingService {
       })
     );
   }
-  // To Do : On Cancel Offer!!
+
   cancelBooking(bookingId: string) {
-    return this.http
-      .delete(
-        `https://bookingproject-b3ebe.firebaseio.com/bookings/${bookingId}.json`
-      )
-      .pipe(
-        switchMap(() => {
-          return this.bookings;
-        }),
-        take(1),
-        tap((bookings) => {
-          this._bookings.next(bookings.filter((b) => b.id !== bookingId));
-        })
-      );
+    return this.authService.token.pipe(
+      take(1),
+      switchMap((token) => {
+        return this.http.delete(
+          `https://bookingproject-b3ebe.firebaseio.com/bookings/${bookingId}.json?auth=${token}`
+        );
+      }),
+      switchMap(() => {
+        return this.bookings;
+      }),
+      take(1),
+      tap((bookings) => {
+        this._bookings.next(bookings.filter((b) => b.id !== bookingId));
+      })
+    );
   }
 
   fetchBookings() {
-    return this.authService.userId.pipe(take(1),
+    let fetchedUserId: string;
+    return this.authService.userId.pipe(
+      take(1),
       switchMap((userId) => {
-        if(!userId){
-          throw new Error('No user id found!');
+        if (!userId) {
+          throw new Error("No user id found!");
         }
+        fetchedUserId = userId;
+        return this.authService.token;
+      }),
+      take(1),
+      switchMap((token) => {
         return this.http.get<{ [key: string]: BookingData }>(
-          `https://bookingproject-b3ebe.firebaseio.com/bookings.json?orderby="userId"&equalto="${userId}"`
+          `https://bookingproject-b3ebe.firebaseio.com/bookings.json?orderby="userId"&equalto="${fetchedUserId}"&auth=${token}`
         );
       }),
       map((bookingData) => {

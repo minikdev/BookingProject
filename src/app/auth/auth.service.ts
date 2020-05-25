@@ -22,6 +22,7 @@ export interface AuthResponseData {
 export class AuthService implements OnDestroy {
   private _user = new BehaviorSubject<User>(null);
   private activeLogoutTimer: any;
+
   get userId() {
     return this._user.asObservable().pipe(
       map((userData) => {
@@ -32,12 +33,6 @@ export class AuthService implements OnDestroy {
         }
       })
     );
-  }
-
-  ngOnDestroy() {
-    if (this.activeLogoutTimer) {
-      clearTimeout(this.activeLogoutTimer);
-    }
   }
 
   get userIsAuthenticated() {
@@ -51,8 +46,25 @@ export class AuthService implements OnDestroy {
       })
     );
   }
-  constructor(private http: HttpClient) {}
 
+  get token() {
+    return this._user.asObservable().pipe(
+      map((userData) => {
+        if (userData) {
+          return userData.token;
+        } else {
+          return null;
+        }
+      })
+    );
+  }
+
+  constructor(private http: HttpClient) {}
+  ngOnDestroy() {
+    if (this.activeLogoutTimer) {
+      clearTimeout(this.activeLogoutTimer);
+    }
+  }
   signup(email: string, password: string) {
     return this.http
       .post<AuthResponseData>(
