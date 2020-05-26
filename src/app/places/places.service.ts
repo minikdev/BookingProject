@@ -94,6 +94,10 @@ export class PlacesService {
     );
   }
 
+
+  
+
+
   getPlace(id: string) {
     return this.authService.token.pipe(
       take(1),
